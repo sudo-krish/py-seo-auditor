@@ -234,7 +234,7 @@ MIT License - Because sharing is caring.
 
 ## ☕ Buy Me a Coffee
 
-If this tool saved you from page 2 of Google, consider [buying me a coffee](https://www.buymeacoffee.com/yourusername). ☕
+If this tool saved you from page 2 of Google, consider [buying me a coffee](https://buymeacoffee.com/krishnanandanil). ☕
 
 ---
 
@@ -248,7 +248,9 @@ If this tool saved you from page 2 of Google, consider [buying me a coffee](http
 
 ---
 
-Made with 🔍 and excessive amounts of caffeine by [Your Name](https://github.com/yourusername)
+Made with 🔍 and excessive amounts of caffeine by [Krishnanand anil](https://github.com/sudo-krish)
+
+I pointed this SEO tool at my portfolio [krishnanandanil.com](https://krishnanandanil.com/) — it gave more feedback than my aunt at a family function, the tools comments were more appriciative. Still, I’ve polished it up. Go look.
 
 **Remember:** Good SEO is like good code — it should be clean, efficient, and not make people want to cry.
 ```
