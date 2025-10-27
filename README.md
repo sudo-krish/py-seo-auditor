@@ -1,8 +1,3 @@
-Here's a **witty README** for `py-seo-auditor`:
-
-***
-
-```markdown
 # 🕵️ py-seo-auditor
 
 > Because your website deserves better than page 2 of Google.
