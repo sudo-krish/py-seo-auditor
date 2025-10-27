@@ -1,0 +1,351 @@
+# SEO Auditor Pro - Configuration File
+# Version: 1.0.0
+
+app:
+  name: "SEO Auditor Pro"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+# Crawler Settings
+crawler:
+  max_pages: 100
+  max_depth: 3
+  timeout: 30  # seconds
+  retry_attempts: 3
+  retry_delay: 2  # seconds
+  concurrent_requests: 5
+  respect_robots_txt: true
+  user_agent: "SEO-Auditor-Bot/1.0 (+https://github.com/yourusername/py-seo-auditor)"
+  follow_redirects: true
+  max_redirects: 5
+  crawl_delay: 1  # seconds between requests
+  exclude_patterns:
+    - "/admin/"
+    - "/wp-admin/"
+    - "/login"
+    - "/cart"
+    - "*.pdf"
+    - "*.jpg"
+    - "*.png"
+  include_patterns:
+    - "/"
+
+# Analysis Checks Configuration
+checks:
+  technical:
+    enabled: true
+    checks:
+      - robots_txt
+      - sitemap_xml
+      - canonical_tags
+      - url_structure
+      - crawl_depth
+      - broken_links
+      - redirect_chains
+      - duplicate_content
+      - structured_data
+      - hreflang
+      - pagination
+      - 404_errors
+
+  onpage:
+    enabled: true
+    checks:
+      - title_tags
+      - meta_descriptions
+      - header_hierarchy
+      - content_quality
+      - keyword_usage
+      - image_optimization
+      - internal_linking
+      - external_linking
+      - url_keywords
+      - content_freshness
+
+  performance:
+    enabled: true
+    checks:
+      - core_web_vitals
+      - page_speed
+      - resource_optimization
+      - caching
+      - compression
+      - minification
+      - lazy_loading
+      - cdn_usage
+
+  mobile:
+    enabled: true
+    checks:
+      - responsive_design
+      - viewport_config
+      - touch_elements
+      - font_sizes
+      - tap_targets
+      - mobile_speed
+      - pop_ups
+      - mobile_usability
+
+  security:
+    enabled: true
+    checks:
+      - https_implementation
+      - ssl_certificate
+      - mixed_content
+      - security_headers
+      - hsts
+      - csp
+      - xss_protection
+
+  accessibility:
+    enabled: true
+    checks:
+      - wcag_compliance
+      - alt_attributes
+      - aria_labels
+      - color_contrast
+      - keyboard_navigation
+      - screen_reader
+      - form_labels
+      - heading_structure
+
+# SEO Thresholds and Limits
+thresholds:
+  title_tag:
+    min_length: 30
+    max_length: 60
+    optimal_length: 55
+
+  meta_description:
+    min_length: 120
+    max_length: 160
+    optimal_length: 155
+
+  content:
+    min_word_count: 300
+    optimal_word_count: 1000
+    max_keyword_density: 3.0  # percentage
+    min_keyword_density: 0.5  # percentage
+
+  images:
+    max_size_kb: 200
+    require_alt_text: true
+    max_dimensions: [1920, 1080]
+
+  internal_links:
+    min_per_page: 5
+    max_per_page: 100
+
+  external_links:
+    min_per_page: 2
+    max_per_page: 50
+
+  page_speed:
+    max_load_time: 3.0  # seconds
+    max_ttfb: 0.6  # Time to First Byte in seconds
+
+  core_web_vitals:
+    lcp_good: 2.5  # Largest Contentful Paint in seconds
+    lcp_poor: 4.0
+    inp_good: 200  # Interaction to Next Paint in milliseconds
+    inp_poor: 500
+    cls_good: 0.1  # Cumulative Layout Shift
+    cls_poor: 0.25
+
+  accessibility:
+    color_contrast_ratio: 4.5  # WCAG AA standard
+    min_font_size: 16  # pixels
+    min_tap_target: 48  # pixels
+
+# Scoring System
+scoring:
+  weights:
+    technical: 25
+    onpage: 25
+    performance: 20
+    mobile: 15
+    security: 10
+    accessibility: 5
+
+  issue_severity:
+    critical: -10  # points deducted
+    error: -5
+    warning: -2
+    info: 0
+
+  grade_thresholds:
+    excellent: 90  # A+
+    good: 75       # A
+    fair: 60       # B
+    poor: 40       # C
+    failing: 0     # F
+
+# API Integrations
+integrations:
+  google:
+    search_console:
+      enabled: false
+      property_url: ""
+
+    pagespeed_insights:
+      enabled: false
+      api_key_env: "GOOGLE_API_KEY"
+      strategy: "mobile"  # mobile or desktop
+      categories:
+        - performance
+        - accessibility
+        - best-practices
+        - seo
+
+  ahrefs:
+    enabled: false
+    api_key_env: "AHREFS_API_KEY"
+    api_url: "https://api.ahrefs.com/v3"
+    checks:
+      - backlinks
+      - referring_domains
+      - domain_rating
+      - url_rating
+      - organic_keywords
+
+  semrush:
+    enabled: false
+    api_key_env: "SEMRUSH_API_KEY"
+    api_url: "https://api.semrush.com"
+    database: "us"
+    checks:
+      - organic_research
+      - backlinks
+      - keyword_difficulty
+      - competitor_analysis
+
+  dataforseo:
+    enabled: false
+    api_key_env: "DATAFORSEO_API_KEY"
+    username_env: "DATAFORSEO_USERNAME"
+    password_env: "DATAFORSEO_PASSWORD"
+    api_url: "https://api.dataforseo.com/v3"
+    checks:
+      - serp_analysis
+      - keyword_data
+      - on_page_api
+
+  screaming_frog:
+    enabled: false
+    api_key_env: "SCREAMING_FROG_API_KEY"
+    max_urls: 500
+
+# Caching Configuration
+cache:
+  enabled: true
+  ttl: 3600  # Time to live in seconds (1 hour)
+  backend: "file"  # file, redis, memory
+  directory: "data/cache"
+  max_size_mb: 500
+  clear_on_startup: false
+
+# Reporting Configuration
+reporting:
+  formats:
+    - pdf
+    - csv
+    - json
+    - html
+
+  output_directory: "data/reports"
+
+  pdf:
+    include_charts: true
+    include_screenshots: false
+    page_size: "A4"
+    orientation: "portrait"
+
+  csv:
+    delimiter: ","
+    include_headers: true
+
+  export:
+    timestamp_format: "%Y%m%d_%H%M%S"
+    filename_pattern: "{domain}_{timestamp}_seo_audit"
+
+  sections:
+    - executive_summary
+    - technical_seo
+    - onpage_seo
+    - performance
+    - mobile
+    - security
+    - accessibility
+    - recommendations
+    - action_items
+
+# Visualization Settings
+visualizations:
+  chart_types:
+    - bar
+    - line
+    - pie
+    - gauge
+    - heatmap
+
+  color_scheme:
+    excellent: "#10b981"  # green
+    good: "#3b82f6"       # blue
+    fair: "#f59e0b"       # orange
+    poor: "#ef4444"       # red
+
+  default_size:
+    width: 800
+    height: 400
+
+# Database Settings (if needed for future)
+database:
+  enabled: false
+  type: "sqlite"  # sqlite, postgresql, mysql
+  path: "data/seo_auditor.db"
+  connection_pool: 5
+
+# Notification Settings
+notifications:
+  enabled: false
+  email:
+    smtp_server: ""
+    smtp_port: 587
+    username_env: "EMAIL_USERNAME"
+    password_env: "EMAIL_PASSWORD"
+    from_address: ""
+    recipients: []
+
+  slack:
+    enabled: false
+    webhook_url_env: "SLACK_WEBHOOK_URL"
+
+# Advanced Settings
+advanced:
+  javascript_rendering: false
+  screenshot_capture: false
+  competitor_analysis: false
+  historical_comparison: false
+  scheduled_audits: false
+
+  rate_limiting:
+    enabled: true
+    requests_per_second: 2
+    burst_size: 5
+
+  proxy:
+    enabled: false
+    url: ""
+    username_env: "PROXY_USERNAME"
+    password_env: "PROXY_PASSWORD"
+
+# Logging Configuration
+logging:
+  console_output: true
+  file_output: true
+  log_file: "logs/seo_auditor.log"
+  max_file_size_mb: 10
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
