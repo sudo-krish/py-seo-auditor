@@ -1,0 +1,9 @@
+jinja2
+extruct
+lxml
+beautifulsoup4
+urllib3
+python-dotenv
+streamlit
+pyyaml
+requests

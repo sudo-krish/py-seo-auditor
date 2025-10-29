@@ -3,8 +3,10 @@ Visualization module for SEO Auditor
 Creates charts and graphs for SEO audit data
 """
 
+from __future__ import annotations  # ✅ Enable postponed evaluation of annotations
+
 import logging
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, TYPE_CHECKING, Union
 from io import BytesIO
 from pathlib import Path
 
@@ -12,10 +14,10 @@ try:
     import plotly.graph_objects as go
     import plotly.express as px
     from plotly.subplots import make_subplots
-
     PLOTLY_AVAILABLE = True
 except ImportError:
     PLOTLY_AVAILABLE = False
+    go = None  # ✅ Set to None for type checking
     logging.warning("Plotly not installed. Interactive charts unavailable.")
 
 try:
@@ -23,10 +25,10 @@ try:
     import matplotlib.patches as mpatches
     from matplotlib.figure import Figure
     import seaborn as sns
-
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
+    Figure = None  # ✅ Set to None for type checking
     logging.warning("Matplotlib not installed. Static charts unavailable.")
 
 from utils.logger import log_execution_time
@@ -92,7 +94,7 @@ class ChartGenerator:
             score: float,
             title: str = "Overall SEO Score",
             chart_type: str = 'plotly'
-    ) -> Any:
+    ) -> Any:  # ✅ Use Any instead of go.Figure
         """
         Create a gauge chart for displaying score
 
@@ -111,8 +113,11 @@ class ChartGenerator:
         else:
             raise VisualizationError(f"Chart type {chart_type} not available")
 
-    def _create_plotly_gauge(self, score: float, title: str) -> go.Figure:
+    def _create_plotly_gauge(self, score: float, title: str) -> Any:  # ✅ Changed from go.Figure
         """Create Plotly gauge chart"""
+        if not PLOTLY_AVAILABLE:
+            raise VisualizationError("Plotly not available")
+
         # Determine color based on score
         if score >= 80:
             color = self.SCORE_COLORS['excellent']
@@ -155,12 +160,15 @@ class ChartGenerator:
 
         return fig
 
-    def _create_matplotlib_gauge(self, score: float, title: str) -> Figure:
+    def _create_matplotlib_gauge(self, score: float, title: str) -> Any:  # ✅ Changed from Figure
         """Create Matplotlib gauge chart"""
+        if not MATPLOTLIB_AVAILABLE:
+            raise VisualizationError("Matplotlib not available")
+
         fig, ax = plt.subplots(figsize=(8, 4), subplot_kw={'projection': 'polar'})
 
         # Create gauge
-        theta = (score / 100) * 180  # Convert to radians
+        theta = (score / 100) * 180  # Convert to degrees
         colors = ['#ef4444', '#f97316', '#f59e0b', '#3b82f6', '#10b981']
         bounds = [0, 36, 72, 108, 144, 180]
 
@@ -186,7 +194,7 @@ class ChartGenerator:
             self,
             category_scores: Dict[str, float],
             chart_type: str = 'plotly'
-    ) -> Any:
+    ) -> Any:  # ✅ Use Any
         """
         Create bar chart for category scores
 
@@ -207,8 +215,11 @@ class ChartGenerator:
         else:
             raise VisualizationError(f"Chart type {chart_type} not available")
 
-    def _create_plotly_category_bars(self, category_scores: Dict[str, float]) -> go.Figure:
+    def _create_plotly_category_bars(self, category_scores: Dict[str, float]) -> Any:  # ✅ Changed
         """Create Plotly horizontal bar chart for categories"""
+        if not PLOTLY_AVAILABLE:
+            raise VisualizationError("Plotly not available")
+
         categories = list(category_scores.keys())
         scores = list(category_scores.values())
 
@@ -245,8 +256,11 @@ class ChartGenerator:
 
         return fig
 
-    def _create_matplotlib_category_bars(self, category_scores: Dict[str, float]) -> Figure:
+    def _create_matplotlib_category_bars(self, category_scores: Dict[str, float]) -> Any:  # ✅ Changed
         """Create Matplotlib horizontal bar chart"""
+        if not MATPLOTLIB_AVAILABLE:
+            raise VisualizationError("Matplotlib not available")
+
         fig, ax = plt.subplots(figsize=(10, 6))
 
         categories = list(category_scores.keys())
@@ -306,8 +320,11 @@ class ChartGenerator:
         else:
             raise VisualizationError(f"Chart type {chart_type} not available")
 
-    def _create_plotly_pie(self, issue_counts: Dict[str, int]) -> go.Figure:
+    def _create_plotly_pie(self, issue_counts: Dict[str, int]) -> Any:  # ✅ Changed
         """Create Plotly donut chart"""
+        if not PLOTLY_AVAILABLE:
+            raise VisualizationError("Plotly not available")
+
         labels = [label.title() for label in issue_counts.keys()]
         values = list(issue_counts.values())
 
@@ -337,8 +354,11 @@ class ChartGenerator:
 
         return fig
 
-    def _create_matplotlib_pie(self, issue_counts: Dict[str, int]) -> Figure:
+    def _create_matplotlib_pie(self, issue_counts: Dict[str, int]) -> Any:  # ✅ Changed
         """Create Matplotlib pie chart"""
+        if not MATPLOTLIB_AVAILABLE:
+            raise VisualizationError("Matplotlib not available")
+
         fig, ax = plt.subplots(figsize=(8, 6))
 
         labels = [label.title() for label in issue_counts.keys()]
@@ -392,8 +412,11 @@ class ChartGenerator:
         else:
             raise VisualizationError(f"Chart type {chart_type} not available")
 
-    def _create_plotly_radar(self, category_scores: Dict[str, float]) -> go.Figure:
+    def _create_plotly_radar(self, category_scores: Dict[str, float]) -> Any:  # ✅ Changed
         """Create Plotly radar chart"""
+        if not PLOTLY_AVAILABLE:
+            raise VisualizationError("Plotly not available")
+
         categories = [cat.title() for cat in category_scores.keys()]
         scores = list(category_scores.values())
 
@@ -425,8 +448,11 @@ class ChartGenerator:
 
         return fig
 
-    def _create_matplotlib_radar(self, category_scores: Dict[str, float]) -> Figure:
+    def _create_matplotlib_radar(self, category_scores: Dict[str, float]) -> Any:  # ✅ Changed
         """Create Matplotlib radar chart"""
+        if not MATPLOTLIB_AVAILABLE:
+            raise VisualizationError("Matplotlib not available")
+
         categories = list(category_scores.keys())
         scores = list(category_scores.values())
 
@@ -481,8 +507,11 @@ class ChartGenerator:
         else:
             raise VisualizationError(f"Chart type {chart_type} not available")
 
-    def _create_plotly_trend(self, historical_data: List[Dict[str, Any]]) -> go.Figure:
+    def _create_plotly_trend(self, historical_data: List[Dict[str, Any]]) -> Any:  # ✅ Changed
         """Create Plotly line chart"""
+        if not PLOTLY_AVAILABLE:
+            raise VisualizationError("Plotly not available")
+
         dates = [item['date'] for item in historical_data]
         scores = [item['score'] for item in historical_data]
 
@@ -514,8 +543,11 @@ class ChartGenerator:
 
         return fig
 
-    def _create_matplotlib_trend(self, historical_data: List[Dict[str, Any]]) -> Figure:
+    def _create_matplotlib_trend(self, historical_data: List[Dict[str, Any]]) -> Any:  # ✅ Changed
         """Create Matplotlib line chart"""
+        if not MATPLOTLIB_AVAILABLE:
+            raise VisualizationError("Matplotlib not available")
+
         fig, ax = plt.subplots(figsize=(10, 6))
 
         dates = [item['date'] for item in historical_data]
@@ -571,12 +603,12 @@ class ChartGenerator:
         filepath = output_path / f"{filename}.{format}"
 
         try:
-            if PLOTLY_AVAILABLE and isinstance(fig, go.Figure):
+            if PLOTLY_AVAILABLE and hasattr(fig, 'write_html'):
                 if format == 'html':
                     fig.write_html(str(filepath))
                 else:
                     fig.write_image(str(filepath), format=format)
-            elif MATPLOTLIB_AVAILABLE and isinstance(fig, Figure):
+            elif MATPLOTLIB_AVAILABLE and hasattr(fig, 'savefig'):
                 fig.savefig(str(filepath), format=format, dpi=300, bbox_inches='tight')
             else:
                 raise VisualizationError("Unknown figure type")
@@ -602,9 +634,9 @@ class ChartGenerator:
         buffer = BytesIO()
 
         try:
-            if PLOTLY_AVAILABLE and isinstance(fig, go.Figure):
+            if PLOTLY_AVAILABLE and hasattr(fig, 'write_image'):
                 fig.write_image(buffer, format=format)
-            elif MATPLOTLIB_AVAILABLE and isinstance(fig, Figure):
+            elif MATPLOTLIB_AVAILABLE and hasattr(fig, 'savefig'):
                 fig.savefig(buffer, format=format, dpi=300, bbox_inches='tight')
             else:
                 raise VisualizationError("Unknown figure type")
@@ -615,3 +647,7 @@ class ChartGenerator:
         except Exception as e:
             logger.error(f"Error converting chart to bytes: {e}")
             raise VisualizationError(f"Failed to convert chart: {e}")
+
+
+# Export
+__all__ = ['ChartGenerator', 'VisualizationError']

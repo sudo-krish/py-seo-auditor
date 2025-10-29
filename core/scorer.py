@@ -1,62 +1,17 @@
 """
-Scoring algorithm for SEO Auditor
-Calculates scores based on issues, severity, and weighted categories
+Scoring Engine for SEO Auditor
+Calculates overall scores, grades, and provides score analysis (2025)
 """
 
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass
-from enum import Enum
+from typing import Dict, List, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
-class Severity(Enum):
-    """Issue severity levels"""
-    CRITICAL = "critical"
-    ERROR = "error"
-    WARNING = "warning"
-    INFO = "info"
-
-
-class Impact(Enum):
-    """Issue impact levels"""
-    HIGH = "high"
-    MEDIUM = "medium"
-    LOW = "low"
-
-
-@dataclass
-class Issue:
-    """
-    Data class representing an SEO issue
-    """
-    title: str
-    description: str
-    severity: Severity
-    category: str
-    affected_pages: List[str]
-    impact: Impact = Impact.MEDIUM
-    effort: str = "medium"  # low, medium, high
-    recommendation: str = ""
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary"""
-        return {
-            'title': self.title,
-            'description': self.description,
-            'severity': self.severity.value,
-            'category': self.category,
-            'affected_pages': self.affected_pages,
-            'impact': self.impact.value,
-            'effort': self.effort,
-            'recommendation': self.recommendation
-        }
-
-
 class SEOScorer:
     """
-    Main scoring engine for calculating SEO audit scores
+    Scoring engine that calculates overall scores and provides analysis
     """
 
     def __init__(self, config: Dict = None):
@@ -81,14 +36,6 @@ class SEOScorer:
             'accessibility': 5
         })
 
-        # Issue severity point deductions
-        self.severity_points = scoring_config.get('issue_severity', {
-            'critical': -10,
-            'error': -5,
-            'warning': -2,
-            'info': 0
-        })
-
         # Grade thresholds
         self.grade_thresholds = scoring_config.get('grade_thresholds', {
             'excellent': 90,
@@ -97,45 +44,40 @@ class SEOScorer:
             'poor': 40
         })
 
-        # Maximum score
-        self.max_score = 100
+        logger.info("SEO Scorer initialized with weighted scoring model")
 
-        logger.info("Scorer initialized with weighted scoring model")
-
-    def calculate_category_score(
-            self,
-            issues: List[Issue],
-            total_checks: int = 10,
-            base_score: int = 100
-    ) -> int:
+    def score_analysis(self, analysis_results: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Calculate score for a single category based on issues
+        Add scoring metadata to analysis results
 
         Args:
-            issues: List of Issue objects found
-            total_checks: Total number of checks performed
-            base_score: Starting score (default 100)
+            analysis_results: Dictionary with analysis results from analyzer
 
         Returns:
-            Category score (0-100)
+            Enhanced results with grade, status, and score breakdown
         """
-        if total_checks == 0:
-            return base_score
+        # Get overall score (already calculated by analyzer)
+        overall_score = analysis_results.get('overall_score', 0)
 
-        score = base_score
+        # Add grade and status
+        analysis_results['overall_grade'] = self.get_grade(overall_score)
+        analysis_results['overall_status'] = self.get_status(overall_score)
 
-        # Deduct points based on issue severity
-        for issue in issues:
-            severity_key = issue.severity.value
-            deduction = self.severity_points.get(severity_key, 0)
-            score += deduction
+        # Add category grades and status
+        category_scores = analysis_results.get('category_scores', {})
+        analysis_results['category_breakdown'] = self._create_category_breakdown(category_scores)
 
-            logger.debug(f"Issue '{issue.title}' ({severity_key}): {deduction} points")
+        # Add score interpretation
+        analysis_results['score_interpretation'] = self._get_score_interpretation(overall_score)
 
-        # Normalize score
-        score = max(0, min(100, score))
+        # Add improvement potential
+        issues_by_severity = analysis_results.get('issues_by_severity', {})
+        analysis_results['improvement_potential'] = self._calculate_improvement_potential(
+            overall_score,
+            issues_by_severity
+        )
 
-        return score
+        return analysis_results
 
     def calculate_weighted_score(self, category_scores: Dict[str, int]) -> int:
         """
@@ -159,7 +101,7 @@ class SEOScorer:
                 total_weight += weight
 
                 logger.debug(f"Category '{category}': score={score}, weight={weight}, "
-                             f"weighted={weighted_value}")
+                           f"weighted={weighted_value}")
 
         if total_weight == 0:
             return 0
@@ -171,7 +113,7 @@ class SEOScorer:
         overall_score = max(0, min(100, overall_score))
 
         logger.info(f"Overall weighted score: {overall_score}/100 "
-                    f"(from {len(category_scores)} categories)")
+                   f"(from {len(category_scores)} categories)")
 
         return overall_score
 
@@ -183,16 +125,16 @@ class SEOScorer:
             score: Numeric score (0-100)
 
         Returns:
-            Grade string (A+, A, B, C, F)
+            Grade string (A, B, C, D, F)
         """
-        if score >= self.grade_thresholds['excellent']:
-            return 'A+'
-        elif score >= self.grade_thresholds['good']:
+        if score >= 90:
             return 'A'
-        elif score >= self.grade_thresholds['fair']:
+        elif score >= 80:
             return 'B'
-        elif score >= self.grade_thresholds['poor']:
+        elif score >= 70:
             return 'C'
+        elif score >= 60:
+            return 'D'
         else:
             return 'F'
 
@@ -217,103 +159,77 @@ class SEOScorer:
         else:
             return 'failing'
 
-    def assess_issue_priority(
-            self,
-            severity: Severity,
-            impact: Impact,
-            affected_pages_count: int
-    ) -> Tuple[str, int]:
+    def _create_category_breakdown(self, category_scores: Dict[str, int]) -> Dict[str, Dict]:
         """
-        Assess issue priority based on severity, impact, and scope
+        Create detailed breakdown of category scores
 
         Args:
-            severity: Issue severity level
-            impact: Business impact level
-            affected_pages_count: Number of affected pages
+            category_scores: Dictionary of category scores
 
         Returns:
-            Tuple of (priority_label, priority_score)
+            Dictionary with category details
         """
-        # Base priority scores
-        severity_scores = {
-            Severity.CRITICAL: 10,
-            Severity.ERROR: 7,
-            Severity.WARNING: 4,
-            Severity.INFO: 1
-        }
+        breakdown = {}
 
-        impact_scores = {
-            Impact.HIGH: 3,
-            Impact.MEDIUM: 2,
-            Impact.LOW: 1
-        }
+        for category, score in category_scores.items():
+            weight = self.category_weights.get(category, 0)
+            weighted_contribution = round((score * weight) / 100, 1)
 
-        # Calculate priority score
-        base_score = severity_scores.get(severity, 1)
-        impact_multiplier = impact_scores.get(impact, 1)
+            breakdown[category] = {
+                'score': score,
+                'grade': self.get_grade(score),
+                'status': self.get_status(score),
+                'weight': weight,
+                'weighted_contribution': weighted_contribution
+            }
 
-        # Factor in scope (more pages = higher priority)
-        scope_multiplier = 1.0
-        if affected_pages_count > 50:
-            scope_multiplier = 2.0
-        elif affected_pages_count > 10:
-            scope_multiplier = 1.5
-        elif affected_pages_count > 1:
-            scope_multiplier = 1.2
+        return breakdown
 
-        priority_score = int(base_score * impact_multiplier * scope_multiplier)
+    def _get_score_interpretation(self, score: int) -> Dict[str, str]:
+        """
+        Get interpretation and guidance for score
 
-        # Determine priority label
-        if priority_score >= 20:
-            priority_label = "critical"
-        elif priority_score >= 10:
-            priority_label = "high"
-        elif priority_score >= 5:
-            priority_label = "medium"
+        Args:
+            score: Overall score
+
+        Returns:
+            Dictionary with interpretation
+        """
+        if score >= 90:
+            return {
+                'level': 'Excellent',
+                'message': 'Outstanding SEO performance! Site follows best practices.',
+                'action': 'Continue monitoring and maintain current standards.'
+            }
+        elif score >= 75:
+            return {
+                'level': 'Good',
+                'message': 'Strong SEO foundation with minor issues to address.',
+                'action': 'Focus on resolving remaining warnings and errors.'
+            }
+        elif score >= 60:
+            return {
+                'level': 'Fair',
+                'message': 'Adequate SEO but significant improvements needed.',
+                'action': 'Prioritize fixing errors and high-impact warnings.'
+            }
+        elif score >= 40:
+            return {
+                'level': 'Poor',
+                'message': 'Major SEO issues affecting search visibility.',
+                'action': 'Address critical and error-level issues immediately.'
+            }
         else:
-            priority_label = "low"
+            return {
+                'level': 'Critical',
+                'message': 'Severe SEO problems requiring immediate attention.',
+                'action': 'Implement urgent fixes for critical issues before other optimizations.'
+            }
 
-        return priority_label, priority_score
-
-    def score_check_result(
-            self,
-            check_name: str,
-            passed: bool,
-            expected_value: Any = None,
-            actual_value: Any = None,
-            severity: Severity = Severity.WARNING
-    ) -> Dict[str, Any]:
-        """
-        Score an individual check result
-
-        Args:
-            check_name: Name of the check
-            passed: Whether check passed
-            expected_value: Expected value
-            actual_value: Actual value found
-            severity: Severity if check failed
-
-        Returns:
-            Dictionary with check result and score impact
-        """
-        result = {
-            'check': check_name,
-            'passed': passed,
-            'expected': expected_value,
-            'actual': actual_value,
-            'severity': severity.value,
-            'score_impact': 0
-        }
-
-        if not passed:
-            result['score_impact'] = self.severity_points.get(severity.value, 0)
-
-        return result
-
-    def calculate_improvement_potential(
-            self,
-            current_score: int,
-            issues_by_severity: Dict[str, List[Issue]]
+    def _calculate_improvement_potential(
+        self,
+        current_score: int,
+        issues_by_severity: Dict[str, List[Dict]]
     ) -> Dict[str, Any]:
         """
         Calculate potential score improvement if issues are fixed
@@ -325,43 +241,50 @@ class SEOScorer:
         Returns:
             Dictionary with improvement analysis
         """
-        # Calculate points to gain from fixing each severity level
-        potential_gains = {}
+        # Estimated point gains (simplified model)
+        severity_potential = {
+            'critical': 15,
+            'error': 10,
+            'warning': 5,
+            'info': 2
+        }
 
-        for severity_level in ['critical', 'error', 'warning']:
-            issues = issues_by_severity.get(severity_level, [])
-            if issues:
-                points_per_issue = abs(self.severity_points.get(severity_level, 0))
-                total_gain = points_per_issue * len(issues)
-                potential_gains[severity_level] = {
-                    'issue_count': len(issues),
-                    'points_per_issue': points_per_issue,
-                    'total_potential_gain': total_gain
+        potential_gains = {}
+        total_gain = 0
+
+        for severity, issues in issues_by_severity.items():
+            if issues and severity in severity_potential:
+                # Diminishing returns - can't gain full points for every issue
+                issue_count = len(issues)
+                base_gain = severity_potential[severity]
+
+                # Cap gain per severity level
+                max_gain = base_gain * min(issue_count, 3)
+
+                potential_gains[severity] = {
+                    'issue_count': issue_count,
+                    'estimated_gain': max_gain
                 }
 
-        # Calculate maximum potential score
-        total_possible_gain = sum(
-            gain['total_potential_gain']
-            for gain in potential_gains.values()
-        )
-        max_potential_score = min(100, current_score + total_possible_gain)
+                total_gain += max_gain
+
+        max_potential_score = min(100, current_score + total_gain)
 
         return {
             'current_score': current_score,
             'max_potential_score': max_potential_score,
-            'total_possible_gain': total_possible_gain,
-            'potential_gains_by_severity': potential_gains,
+            'total_possible_gain': total_gain,
+            'gains_by_severity': potential_gains,
             'improvement_percentage': round(
-                (max_potential_score - current_score) / current_score * 100
-                if current_score > 0 else 0,
+                (max_potential_score - current_score) / max(current_score, 1) * 100,
                 1
             )
         }
 
     def compare_scores(
-            self,
-            previous_score: int,
-            current_score: int
+        self,
+        previous_score: int,
+        current_score: int
     ) -> Dict[str, Any]:
         """
         Compare two scores and calculate changes
@@ -382,12 +305,15 @@ class SEOScorer:
         if difference > 0:
             trend = "improving"
             trend_icon = "↑"
+            trend_color = "green"
         elif difference < 0:
             trend = "declining"
             trend_icon = "↓"
+            trend_color = "red"
         else:
             trend = "stable"
             trend_icon = "→"
+            trend_color = "gray"
 
         return {
             'previous_score': previous_score,
@@ -396,156 +322,13 @@ class SEOScorer:
             'percentage_change': percentage_change,
             'trend': trend,
             'trend_icon': trend_icon,
+            'trend_color': trend_color,
             'previous_grade': self.get_grade(previous_score),
-            'current_grade': self.get_grade(current_score)
-        }
-
-    def generate_score_breakdown(
-            self,
-            category_scores: Dict[str, int]
-    ) -> Dict[str, Any]:
-        """
-        Generate detailed score breakdown with weights
-
-        Args:
-            category_scores: Dictionary of category scores
-
-        Returns:
-            Dictionary with score breakdown
-        """
-        breakdown = {}
-        total_weighted = 0
-        total_weight = 0
-
-        for category, score in category_scores.items():
-            weight = self.category_weights.get(category, 0)
-            weighted_score = (score * weight) / 100
-
-            breakdown[category] = {
-                'score': score,
-                'weight': weight,
-                'weighted_score': round(weighted_score, 2),
-                'grade': self.get_grade(score),
-                'status': self.get_status(score)
-            }
-
-            total_weighted += weighted_score
-            total_weight += weight
-
-        overall_score = round(total_weighted) if total_weight > 0 else 0
-
-        return {
-            'categories': breakdown,
-            'overall_score': overall_score,
-            'overall_grade': self.get_grade(overall_score),
-            'overall_status': self.get_status(overall_score),
-            'total_weight': total_weight
-        }
-
-    def create_score_report(
-            self,
-            category_scores: Dict[str, int],
-            issues_by_category: Dict[str, List[Issue]],
-            total_pages: int = 1
-    ) -> Dict[str, Any]:
-        """
-        Create comprehensive score report
-
-        Args:
-            category_scores: Dictionary of category scores
-            issues_by_category: Dictionary of issues by category
-            total_pages: Total pages analyzed
-
-        Returns:
-            Complete score report dictionary
-        """
-        # Calculate overall score
-        overall_score = self.calculate_weighted_score(category_scores)
-
-        # Generate breakdown
-        breakdown = self.generate_score_breakdown(category_scores)
-
-        # Count issues by severity
-        all_issues = []
-        for issues in issues_by_category.values():
-            all_issues.extend(issues)
-
-        issues_by_severity = {
-            'critical': [i for i in all_issues if i.severity == Severity.CRITICAL],
-            'error': [i for i in all_issues if i.severity == Severity.ERROR],
-            'warning': [i for i in all_issues if i.severity == Severity.WARNING],
-            'info': [i for i in all_issues if i.severity == Severity.INFO]
-        }
-
-        # Calculate improvement potential
-        improvement = self.calculate_improvement_potential(
-            overall_score,
-            issues_by_severity
-        )
-
-        return {
-            'overall_score': overall_score,
-            'overall_grade': self.get_grade(overall_score),
-            'overall_status': self.get_status(overall_score),
-            'breakdown': breakdown,
-            'total_pages_analyzed': total_pages,
-            'issue_counts': {
-                'critical': len(issues_by_severity['critical']),
-                'error': len(issues_by_severity['error']),
-                'warning': len(issues_by_severity['warning']),
-                'info': len(issues_by_severity['info']),
-                'total': len(all_issues)
-            },
-            'improvement_potential': improvement
+            'current_grade': self.get_grade(current_score),
+            'previous_status': self.get_status(previous_score),
+            'current_status': self.get_status(current_score)
         }
 
 
-def create_issue(
-        title: str,
-        description: str,
-        severity: str,
-        category: str,
-        affected_pages: List[str],
-        impact: str = "medium",
-        effort: str = "medium",
-        recommendation: str = ""
-) -> Issue:
-    """
-    Helper function to create Issue object
-
-    Args:
-        title: Issue title
-        description: Issue description
-        severity: Severity level (critical, error, warning, info)
-        category: Category name
-        affected_pages: List of affected page URLs
-        impact: Impact level (high, medium, low)
-        effort: Effort to fix (high, medium, low)
-        recommendation: Recommendation text
-
-    Returns:
-        Issue object
-    """
-    severity_map = {
-        'critical': Severity.CRITICAL,
-        'error': Severity.ERROR,
-        'warning': Severity.WARNING,
-        'info': Severity.INFO
-    }
-
-    impact_map = {
-        'high': Impact.HIGH,
-        'medium': Impact.MEDIUM,
-        'low': Impact.LOW
-    }
-
-    return Issue(
-        title=title,
-        description=description,
-        severity=severity_map.get(severity.lower(), Severity.WARNING),
-        category=category,
-        affected_pages=affected_pages,
-        impact=impact_map.get(impact.lower(), Impact.MEDIUM),
-        effort=effort,
-        recommendation=recommendation
-    )
+# Export
+__all__ = ['SEOScorer']
